@@ -23,9 +23,7 @@ void fillQueue(const std::array<sf::Vector2i, 6>& hex, const sf::Vector2i& initi
     sf::Vector2i a = hex[side], b = hex[(side + 1) % 6];
 
     p = (p + a + b) / 3;
-    while (!queue.push(p) && running) {
-      queue.push(p);
-    }
+    while (!queue.push(p) && running) {}
   }
 }
 
@@ -47,19 +45,14 @@ std::array<sf::Vector2i, 6> createHex(float scale = 1.f) {
   return hex;
 }
 
-void drawHex(sf::RenderWindow& window, std::array<sf::Vector2i, 6>& hex) {
+sf::VertexArray createHexagon(std::array<sf::Vector2i, 6>& hex) {
   sf::VertexArray hexagon(sf::LineStrip, 7);
   for (size_t i = 0; i < 7; i++) {
     hexagon[i].color = sf::Color::White;
     hexagon[i].position = sf::Vector2f(hex[i % 6]);
   }
 
-  window.draw(hexagon);
-}
-
-void drawPoint(sf::RenderWindow& window, const sf::Vector2i& p) {
-  sf::Vertex point(sf::Vector2f(p), sf::Color::White);
-  window.draw(&point, 1, sf::Points);
+  return hexagon;
 }
 
 int main() {
@@ -74,8 +67,9 @@ int main() {
   window.setView(view);
 
   window.clear(sf::Color::Black);
-  drawHex(window, hex);
-  window.display();
+
+  sf::VertexArray hexagon = createHexagon(hex);
+  std::vector<sf::Vertex> points;
 
   sf::Clock clock;
   while (window.isOpen()) {
@@ -87,13 +81,18 @@ int main() {
       }
     }
 
-    if (clock.getElapsedTime().asMilliseconds() > 1) {
+    if (clock.getElapsedTime().asMicroseconds() > 1) {
       boost::optional<sf::Vector2i> p = queue.pop();
       if (p.has_value()) {
-        drawPoint(window, p.value());
-        window.display();
-        clock.restart();
+        points.push_back(sf::Vertex(sf::Vector2f(p.value()), sf::Color::White));
       }
     }
+
+    window.clear();
+    window.draw(hexagon);
+    for (const sf::Vertex& point : points) {
+      window.draw(&point, 1, sf::Points);
+    }
+    window.display();
   }
 }

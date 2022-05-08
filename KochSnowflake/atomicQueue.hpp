@@ -21,7 +21,8 @@ public:
     std::lock_guard<std::mutex> lock(mutex);
     boost::optional<T> elem;
     if (!queue.empty()) {
-      elem = queue.back();
+      elem = queue.front();
+      queue.pop();
     }
     
     return elem;
