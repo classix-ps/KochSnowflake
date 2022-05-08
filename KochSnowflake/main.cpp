@@ -7,43 +7,43 @@
 #include <random>
 
 std::atomic_bool running = true;
-atomicQueue<sf::Vector2i> queue;
+atomicQueue<sf::Vector2f> queue;
 
 /* Fills the queue with points.
  */
-void fillQueue(const std::vector<sf::Vector2i>& vertices, const sf::Vector2i& initialPoint) {
+void fillQueue(const std::vector<sf::Vector2f>& vertices, const sf::Vector2f& initialPoint) {
   size_t verticesCount = vertices.size();
 
   std::random_device rd;
   std::mt19937 rng(rd());
   std::uniform_int_distribution<int> uid(0, verticesCount - 1);
 
-  sf::Vector2i p = initialPoint;
+  sf::Vector2f p = initialPoint;
   while (running) {
     int side = uid(rng);
-    sf::Vector2i a = vertices[side], b = vertices[(side + 1) % verticesCount];
+    sf::Vector2f a = vertices[side], b = vertices[(side + 1) % verticesCount];
 
-    p = (p + a + b) / 3;
+    p = (p + a + b) / 3.f;
     while (!queue.push(p) && running) {}
   }
 }
 
-std::vector<sf::Vector2i> createVertices(size_t verticesCount = 6, float scale = 1.f) {
-  std::vector<sf::Vector2i> vertices;
+std::vector<sf::Vector2f> createVertices(size_t verticesCount = 6, float scale = 1.f) {
+  std::vector<sf::Vector2f> vertices;
 
   float circumradius = 100 * scale;
   float angleDelta = 360 / verticesCount;
   float angle = 90 + angleDelta / 2;
 
   for (size_t i = 0; i < verticesCount; i++) {
-    vertices.push_back(sf::Vector2i(circumradius * cos(angle * M_PI / 180), circumradius * sin(angle * M_PI / 180)));
+    vertices.push_back(sf::Vector2f(circumradius * cos(angle * M_PI / 180), circumradius * sin(angle * M_PI / 180)));
     angle += angleDelta;
   }
 
   return vertices;
 }
 
-sf::VertexArray createPolygon(const std::vector<sf::Vector2i>& vertices) {
+sf::VertexArray createPolygon(const std::vector<sf::Vector2f>& vertices) {
   size_t verticesCount = vertices.size();
   sf::VertexArray polygon(sf::LineStrip, verticesCount + 1);
   for (size_t i = 0; i < verticesCount + 1; i++) {
@@ -57,8 +57,8 @@ sf::VertexArray createPolygon(const std::vector<sf::Vector2i>& vertices) {
 int main() {
   sf::RenderWindow window(sf::VideoMode(800, 600), "Koch Snowflake");
 
-  std::vector<sf::Vector2i> vertices = createVertices(6);
-  sf::Vector2i initialPoint(0, 0);
+  std::vector<sf::Vector2f> vertices = createVertices(6);
+  sf::Vector2f initialPoint(0, 0);
 
   auto f = std::async(std::launch::async, fillQueue, vertices, initialPoint);
 
@@ -81,7 +81,7 @@ int main() {
     }
 
     if (clock.getElapsedTime().asMicroseconds() > 1) {
-      boost::optional<sf::Vector2i> p = queue.pop();
+      boost::optional<sf::Vector2f> p = queue.pop();
       if (p.has_value()) {
         points.push_back(sf::Vertex(sf::Vector2f(p.value()), sf::Color::White));
       }
