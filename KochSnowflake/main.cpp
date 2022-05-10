@@ -68,7 +68,7 @@ int main() {
   window.clear(sf::Color::Black);
 
   sf::VertexArray polygon = createPolygon(vertices);
-  std::vector<sf::Vertex> points;
+  sf::VertexArray points;
 
   sf::Clock clock;
   while (window.isOpen()) {
@@ -83,15 +83,13 @@ int main() {
     if (clock.getElapsedTime().asMicroseconds() > 1) {
       boost::optional<sf::Vector2f> p = queue.pop();
       if (p.has_value()) {
-        points.push_back(sf::Vertex(sf::Vector2f(p.value()), sf::Color::White));
+        points.append(sf::Vertex(sf::Vector2f(p.value()), sf::Color::White));
       }
     }
 
     window.clear();
     window.draw(polygon);
-    for (const sf::Vertex& point : points) {
-      window.draw(&point, 1, sf::Points);
-    }
+    window.draw(points);
     window.display();
   }
 }
