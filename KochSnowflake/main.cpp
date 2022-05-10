@@ -5,6 +5,7 @@
 #include <math.h>
 #include <future>
 #include <random>
+#include <algorithm>
 
 std::atomic_bool running = true;
 atomicQueue<sf::Vector2f> queue;
@@ -54,6 +55,8 @@ sf::VertexArray createPolygon(const std::vector<sf::Vector2f>& vertices) {
   return polygon;
 }
 
+enum class State { View, Move };
+
 int main() {
   sf::RenderWindow window(sf::VideoMode(800, 600), "Koch Snowflake");
 
@@ -62,7 +65,12 @@ int main() {
 
   auto f = std::async(std::launch::async, fillQueue, vertices, initialPoint);
 
-  sf::View view(sf::Vector2f(0.f, 0.f), sf::Vector2f(200.f, 200.f));
+  float zoom = 0.4f;
+  float maxZoom = 1.f;
+  float minZoom = 0.01f;
+  sf::View view = window.getDefaultView();
+  view.setCenter(0.f, 0.f);
+  view.zoom(zoom);
   window.setView(view);
 
   window.clear(sf::Color::Black);
@@ -71,12 +79,53 @@ int main() {
   sf::VertexArray points;
 
   sf::Clock clock;
+  sf::Vector2f oldPos;
+  State state = State::View;
   while (window.isOpen()) {
     sf::Event e;
     while (window.pollEvent(e)) {
       if (e.type == sf::Event::Closed || (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Escape)) {
         running = false;
         window.close();
+        break;
+      }
+      if (e.type == sf::Event::MouseWheelScrolled) {
+        if (e.mouseWheelScroll.delta < 0) {
+          zoom = std::min(maxZoom, zoom * 1.12f);
+        }
+        else if (e.mouseWheelScroll.delta > 0) {
+          zoom = std::max(minZoom, zoom / 1.12f);
+        }
+
+        view.setSize(window.getDefaultView().getSize());
+        view.zoom(zoom);
+        window.setView(view);
+      }
+      switch (state) {
+      case State::View:
+        if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left) {
+          oldPos = sf::Vector2f(sf::Mouse::getPosition());
+          state = State::Move;
+        }
+        else if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Space) {
+          view.setCenter(0.f, 0.f);
+          window.setView(view);
+        }
+        break;
+      case State::Move:
+        if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == sf::Mouse::Left) {
+          state = State::View;
+        }
+        else {
+          sf::Vector2f mousePos = sf::Vector2f(sf::Mouse::getPosition());
+          sf::Vector2f deltaPos = oldPos - mousePos;
+          deltaPos.x *= zoom;
+          deltaPos.y *= zoom;
+          view.move(deltaPos);
+          window.setView(view);
+          oldPos = mousePos;
+        }
+        break;
       }
     }
 
