@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "atomicQueue.hpp"
+#include "sierpinskiPolygon.hpp"
 
 #include <math.h>
 #include <future>
@@ -29,10 +30,10 @@ void fillQueue(const std::vector<sf::Vector2f>& vertices, const sf::Vector2f& in
   }
 }
 
-std::vector<sf::Vector2f> createVertices(size_t verticesCount = 6, float scale = 1.f) {
+std::vector<sf::Vector2f> createVertices(size_t verticesCount = 6) {
   std::vector<sf::Vector2f> vertices;
 
-  float circumradius = 100 * scale;
+  float circumradius = 100.f;
   float angleDelta = 360 / verticesCount;
   float angle = 90 + angleDelta / 2;
 
@@ -44,39 +45,28 @@ std::vector<sf::Vector2f> createVertices(size_t verticesCount = 6, float scale =
   return vertices;
 }
 
-sf::VertexArray createPolygon(const std::vector<sf::Vector2f>& vertices) {
-  size_t verticesCount = vertices.size();
-  sf::VertexArray polygon(sf::LineStrip, verticesCount + 1);
-  for (size_t i = 0; i < verticesCount + 1; i++) {
-    polygon[i].color = sf::Color::White;
-    polygon[i].position = sf::Vector2f(vertices[i % verticesCount]);
-  }
-
-  return polygon;
-}
-
 enum class State { View, Move };
 
 int main() {
   sf::RenderWindow window(sf::VideoMode(800, 600), "Koch Snowflake");
 
-  std::vector<sf::Vector2f> vertices = createVertices(6);
+  size_t sides = 6;
+
+  std::vector<sf::Vector2f> vertices = createVertices(sides);
+  SierpinskiPolygon sierpinskiPolygon(vertices);
   sf::Vector2f initialPoint(0, 0);
 
   auto f = std::async(std::launch::async, fillQueue, vertices, initialPoint);
 
   float zoom = 0.4f;
   float maxZoom = 1.f;
-  float minZoom = 0.01f;
+  float minZoom = 0.001f;
   sf::View view = window.getDefaultView();
   view.setCenter(0.f, 0.f);
   view.zoom(zoom);
   window.setView(view);
 
   window.clear(sf::Color::Black);
-
-  sf::VertexArray polygon = createPolygon(vertices);
-  sf::VertexArray points;
 
   sf::Clock clock;
   sf::Vector2f oldPos;
@@ -132,13 +122,12 @@ int main() {
     if (clock.getElapsedTime().asMicroseconds() > 1) {
       boost::optional<sf::Vector2f> p = queue.pop();
       if (p.has_value()) {
-        points.append(sf::Vertex(sf::Vector2f(p.value()), sf::Color::White));
+        sierpinskiPolygon.addPoint(p.value());
       }
     }
 
     window.clear();
-    window.draw(polygon);
-    window.draw(points);
+    sierpinskiPolygon.draw(window);
     window.display();
   }
 }
