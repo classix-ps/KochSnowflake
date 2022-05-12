@@ -1,0 +1,3 @@
+[submodule "SFML-Serialize"]
+	path = SFML-Serialize
+	url = https://github.com/classix-ps/SFML-Serialize.git
