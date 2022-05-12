@@ -38,6 +38,11 @@ public:
     return elem;
   }
 
+  void clear() {
+    std::lock_guard<std::mutex> lock(mutex);
+    queue = {};
+  }
+
 private:
   std::queue<T> queue;
   mutable std::mutex mutex;

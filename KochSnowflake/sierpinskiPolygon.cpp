@@ -20,8 +20,26 @@ void SierpinskiPolygon::setPolygon(const std::vector<sf::Vector2f>& vertices) {
   }
 }
 
+void SierpinskiPolygon::reset() {
+  polygon.clear();
+  points.clear();
+}
+
+size_t SierpinskiPolygon::getVertexCount() {
+  return polygon.getVertexCount() - 1; // We won't allow fewer than 3 vertices, so underflow isn't an issue
+}
+
 void SierpinskiPolygon::addPoint(const sf::Vector2f& point) {
   points.append(sf::Vertex(point));
+}
+
+boost::optional<sf::Vector2f> SierpinskiPolygon::lastPoint() {
+  boost::optional<sf::Vector2f> p;
+  if (size_t vertexCount = points.getVertexCount()) {
+    p = points[vertexCount - 1].position;
+  }
+
+  return p;
 }
 
 void SierpinskiPolygon::draw(sf::RenderWindow& window) {
