@@ -229,7 +229,7 @@ std::vector<sf::Vector2f> WindowManager::createVertices(size_t vertexCount) {
   std::vector<sf::Vector2f> vertices;
 
   float circumradius = 100.f;
-  float angleDelta = 360 / vertexCount;
+  float angleDelta = 360.f / vertexCount;
   float angle = 90 + angleDelta / 2;
 
   for (size_t i = 0; i < vertexCount; i++) {
